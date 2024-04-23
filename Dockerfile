@@ -4,17 +4,14 @@ LABEL org.opencontainers.image.authors="Argo triwidodo"
 ARG VERSION=4.9
 
 # setup jmeter version to use
-ARG JMETER_VERSION="5.5"
-ARG JMETER_PLUGINS_MANAGER_VERSION="1.8"
-ARG CMDRUNNER_VERSION="2.3"
+ARG JMETER_VERSION="5.3"
+ARG CMDRUNNER_JAR_VERSION="2.2.1"
+ARG JMETER_PLUGINS_MANAGER_VERSION="1.6"
 ENV JMETER_HOME /opt/apache-jmeter-${JMETER_VERSION}
-ENV JMETER_BIN  ${JMETER_HOME}/bin
-ENV MIRROR_HOST https://archive.apache.org/dist/jmeter
-ENV JMETER_DOWNLOAD_URL ${MIRROR_HOST}/binaries/apache-jmeter-${JMETER_VERSION}.tgz
-ENV JMETER_PLUGINS_DOWNLOAD_URL https://repo1.maven.org/maven2/kg/apc
-ENV JMETER_PLUGINS_FOLDER ${JMETER_HOME}/lib/ext/
+ENV JMETER_LIB_FOLDER ${JMETER_HOME}/lib/
+ENV JMETER_PLUGINS_FOLDER ${JMETER_LIB_FOLDER}ext/
+ENV MIRROR_URL https://archive.apache.org/dist/jmeter/binaries/
 ENV JMETER_INFLUX_PLUGIN_JAR_URL https://github.com/mderevyankoaqa/jmeter-influxdb2-listener-plugin/releases/download/v2.6/jmeter-plugins-influxdb2-listener-2.6.jar
-ENV PATH $PATH:$JMETER_BIN
 
 # Set Jenkins Group
 ARG user=jenkins
@@ -35,7 +32,26 @@ RUN mkdir -p /var/run/sshd
 
 # Install Open JDK 17 (latest edition) and other tools
 RUN apt install -y openjdk-17-jdk && apt install -y curl unzip wget git
+ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+ENV PATH="$JAVA_HOME/bin:${PATH}"
+#Install Jmeter
+WORKDIR ${JMETER_HOME}
+RUN apt-get install -y wget gnupg
+RUN wget ${MIRROR_URL}/apache-jmeter-${JMETER_VERSION}.tgz
+RUN tar -xzf apache-jmeter-${JMETER_VERSION}.tgz
+RUN mv apache-jmeter-${JMETER_VERSION}/* /opt/apache-jmeter-${JMETER_VERSION}
+RUN rm -r /opt/apache-jmeter-${JMETER_VERSION}/apache-jmeter-${JMETER_VERSION}
 
+# Download Command Runner and move it to lib folder
+WORKDIR ${JMETER_LIB_FOLDER}
+RUN wget https://repo1.maven.org/maven2/kg/apc/cmdrunner/${CMDRUNNER_JAR_VERSION}/cmdrunner-${CMDRUNNER_JAR_VERSION}.jar
+
+# Download JMeter Plugins manager and move it to lib/ext folder
+WORKDIR ${JMETER_PLUGINS_FOLDER}
+RUN wget https://repo1.maven.org/maven2/kg/apc/jmeter-plugins-manager/${JMETER_PLUGINS_MANAGER_VERSION}/jmeter-plugins-manager-${JMETER_PLUGINS_MANAGER_VERSION}.jar
+WORKDIR ${JMETER_LIB_FOLDER}
+RUN curl -L --silent ${JMETER_INFLUX_PLUGIN_JAR_URL} -o ${JMETER_PLUGINS_FOLDER}/jmeter-plugins-influxdb2-listener-2.6.jar
+RUN java  -jar cmdrunner-2.2.1.jar --tool org.jmeterplugins.repository.PluginManagerCMD install-all-except jpgc-hadoop,jpgc-oauth,ulp-jmeter-autocorrelator-plugin,ulp-jmeter-videostreaming-plugin,ulp-jmeter-gwt-plugin,tilln-iso8583
 
 # Add user jenkins to the image
 RUN adduser --quiet jenkins
@@ -52,31 +68,12 @@ RUN curl --create-dirs -fsSLo /usr/share/jenkins/slave.jar https://repo.jenkins-
   && chmod 755 /usr/share/jenkins \
   && chmod 644 /usr/share/jenkins/slave.jar
 
-# Install Jmeter Needed.
-RUN \
-  sed -i -e 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list && \
-  apt-get update && \
-  apt-get install -y --no-install-recommends build-essential && \
-  apt-get install -y --no-install-recommends software-properties-common && \
-  apt-get install -y --no-install-recommends byobu openjdk-11-jre curl git htop man unzip vim wget python3-pip && \
-  mkdir -p /tmp/dependencies &&   \
-  curl -L --silent ${JMETER_DOWNLOAD_URL} >  /tmp/dependencies/apache-jmeter-${JMETER_VERSION}.tgz &&  \
-  mkdir -p /opt && \
-  tar -xzf /tmp/dependencies/apache-jmeter-${JMETER_VERSION}.tgz -C /opt &&  \
-  rm -rf /tmp/dependencies && \
-  rm -rf /var/lib/apt/lists/*
-# Install jmeter lib and dependency jars
-RUN curl -L --silent ${JMETER_PLUGINS_DOWNLOAD_URL}/jmeter-plugins-manager/${JMETER_PLUGINS_MANAGER_VERSION}/jmeter-plugins-manager-${JMETER_PLUGINS_MANAGER_VERSION}.jar -o ${JMETER_PLUGINS_FOLDER}/jmeter-plugins-manager-${JMETER_PLUGINS_MANAGER_VERSION}.jar
-RUN curl -L --silent ${JMETER_PLUGINS_DOWNLOAD_URL}/cmdrunner/${CMDRUNNER_VERSION}/cmdrunner-${CMDRUNNER_VERSION}.jar -o ${JMETER_HOME}/lib/cmdrunner-${CMDRUNNER_VERSION}.jar && \
-    curl -L --silent ${JMETER_INFLUX_PLUGIN_JAR_URL} -o ${JMETER_PLUGINS_FOLDER}/jmeter-plugins-influxdb2-listener-2.6.jar && \
-    java -cp ${JMETER_PLUGINS_FOLDER}/jmeter-plugins-manager-${JMETER_PLUGINS_MANAGER_VERSION}.jar org.jmeterplugins.repository.PluginManagerCMDInstaller && \
-    PluginsManagerCMD.sh install jpgc-cmd=2.2,jpgc-casutg=2.10,jpgc-dummy=0.4,jpgc-filterresults=2.2,jpgc-synthesis=2.2,jpgc-graphs-basic=2.0 \
-    && jmeter --version \
-    && PluginsManagerCMD.sh status \
+
 # Set password for the jenkins user (you may want to alter this).
 RUN echo "jenkins:jenkins" | chpasswd
+RUN mkdir /home/jenkins/.m2
 WORKDIR /home/jenkins
-
+#ADD settings.xml /home/jenkins/.m2/
 RUN chown -R jenkins:jenkins /home/jenkins/.m2/
 # Standard SSH port
 EXPOSE 22
