@@ -11,7 +11,6 @@ on:
 jobs:
   build:
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')   # Only run for tag push events
     steps:
     - uses: actions/checkout@v3
     - name: Build the Docker image
