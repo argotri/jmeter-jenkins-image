@@ -2,16 +2,22 @@ name: Docker Image CI
 
 on:
   push:
-    tags:        
+    branches: [ "main" ]
+    tags:
       - '**'           # Push events to every tag including hierarchical tags like v1.0/beta
+  pull_request:
+    branches: [ "main" ]
 
 jobs:
   build:
     runs-on: ubuntu-latest
+    if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')   # Only run for tag push events
     steps:
     - uses: actions/checkout@v3
-    - name: Build the Docker image And push to Docker HUB
+    - name: Build the Docker image
+      run: docker build . --file Dockerfile --tag docker.io/${{ secrets.DOCKER_HUB_REPOSITORY }}:${GITHUB_REF##*/}
+    - name: Push to Docker HUB
+      if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')   # Only push when tag is created
       run: |
         echo "${{ secrets.DOCKER_KEY }}" | docker login -u "${{ secrets.DOCKER_HUB_USERNAME }}" --password-stdin docker.io
-        docker build . --file Dockerfile --tag docker.io/${{ secrets.DOCKER_HUB_REPOSITORY }}:${GITHUB_REF##*/}
         docker push docker.io/${{ secrets.DOCKER_HUB_REPOSITORY }}:${GITHUB_REF##*/}
