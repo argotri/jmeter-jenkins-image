@@ -52,11 +52,6 @@ RUN curl --create-dirs -fsSLo /usr/share/jenkins/slave.jar https://repo.jenkins-
   && chmod 755 /usr/share/jenkins \
   && chmod 644 /usr/share/jenkins/slave.jar
 
-# Start Instalation jmeter Image
-RUN mkdir ${JMETER_HOME}
-RUN mkdir ${JMETER_LIB_FOLDER}
-RUN mkdir ${JMETER_PLUGINS_FOLDER}
-WORKDIR ${JMETER_HOME}
 # Install Jmeter Needed.
 RUN \
   sed -i -e 's/# \(.*multiverse$\)/\1/g' /etc/apt/sources.list && \
@@ -78,11 +73,10 @@ RUN curl -L --silent ${JMETER_PLUGINS_DOWNLOAD_URL}/cmdrunner/${CMDRUNNER_VERSIO
     PluginsManagerCMD.sh install jpgc-cmd=2.2,jpgc-casutg=2.10,jpgc-dummy=0.4,jpgc-filterresults=2.2,jpgc-synthesis=2.2,jpgc-graphs-basic=2.0 \
     && jmeter --version \
     && PluginsManagerCMD.sh status \
-
 # Set password for the jenkins user (you may want to alter this).
 RUN echo "jenkins:jenkins" | chpasswd
-RUN mkdir /home/jenkins/.m2
-#ADD settings.xml /home/jenkins/.m2/
+WORKDIR /home/jenkins
+
 RUN chown -R jenkins:jenkins /home/jenkins/.m2/
 # Standard SSH port
 EXPOSE 22
