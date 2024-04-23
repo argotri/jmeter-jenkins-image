@@ -21,7 +21,7 @@ ARG gid=1000
 
 # Make sure the package repository is up to date.
 #RUN add-apt-repository ppa:openjdk-r/ppa
-# RUN apt-get update
+RUN apt-get update
 # RUN apt-get -y upgrade
 # RUN apt-get install -y build-essential
 
