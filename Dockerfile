@@ -1,4 +1,4 @@
-FROM ubuntu:22.04
+FROM ubuntu:23.10
 LABEL org.opencontainers.image.authors="Argo triwidodo"
 # Jenkins Vesion
 ARG VERSION=4.9
@@ -21,8 +21,8 @@ ARG gid=1000
 
 # Make sure the package repository is up to date.
 #RUN add-apt-repository ppa:openjdk-r/ppa
-RUN apt-get update
-RUN apt-get -y upgrade
+# RUN apt-get update
+# RUN apt-get -y upgrade
 # RUN apt-get install -y build-essential
 
 # Install a basic SSH server
