@@ -51,6 +51,9 @@ WORKDIR ${JMETER_PLUGINS_FOLDER}
 RUN wget https://repo1.maven.org/maven2/kg/apc/jmeter-plugins-manager/${JMETER_PLUGINS_MANAGER_VERSION}/jmeter-plugins-manager-${JMETER_PLUGINS_MANAGER_VERSION}.jar
 WORKDIR ${JMETER_LIB_FOLDER}
 RUN curl -L --silent ${JMETER_INFLUX_PLUGIN_JAR_URL} -o ${JMETER_PLUGINS_FOLDER}/jmeter-plugins-influxdb2-listener-2.6.jar
+COPY groovy-all-2.4.16.jar ${JMETER_PLUGINS_FOLDER}/groovy-all-2.4.16.jar
+COPY mongo-java-driver-3.12.10.jar ${JMETER_PLUGINS_FOLDER}/mongo-java-driver-3.12.10.jar
+COPY postgresql-42.7.3.jar ${JMETER_PLUGINS_FOLDER}/postgresql-42.7.3.jar
 RUN java  -jar cmdrunner-2.2.1.jar --tool org.jmeterplugins.repository.PluginManagerCMD install-all-except jpgc-hadoop,jpgc-oauth,ulp-jmeter-autocorrelator-plugin,ulp-jmeter-videostreaming-plugin,ulp-jmeter-gwt-plugin,tilln-iso8583
 
 # Add user jenkins to the image
