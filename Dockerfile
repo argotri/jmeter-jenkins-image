@@ -30,9 +30,9 @@ RUN apt install -y openssh-server
 RUN sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd
 RUN mkdir -p /var/run/sshd
 
-# Install Open JDK 17 (latest edition) and other tools
-RUN apt install -y openjdk-17-jdk && apt install -y curl unzip wget git
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+# Install Open JDK 11 and other tools
+RUN apt install -y openjdk-11-jdk && apt install -y curl unzip wget git
+ENV JAVA_HOME=/usr/lib/jvm/java-11-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:${PATH}:${JMETER_HOME}/bin"
 #Install Jmeter
 WORKDIR ${JMETER_HOME}
