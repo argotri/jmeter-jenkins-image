@@ -4,14 +4,14 @@ LABEL org.opencontainers.image.authors="Argo triwidodo"
 ARG VERSION=4.9
 
 # setup jmeter version to use
-ARG JMETER_VERSION="5.3"
-ARG CMDRUNNER_JAR_VERSION="2.2.1"
-ARG JMETER_PLUGINS_MANAGER_VERSION="1.6"
+ARG JMETER_VERSION="5.6.3"
+ARG CMDRUNNER_JAR_VERSION="2.3"
+ARG JMETER_PLUGINS_MANAGER_VERSION="1.9"
 ENV JMETER_HOME /opt/apache-jmeter-${JMETER_VERSION}
 ENV JMETER_LIB_FOLDER ${JMETER_HOME}/lib/
 ENV JMETER_PLUGINS_FOLDER ${JMETER_LIB_FOLDER}ext/
 ENV MIRROR_URL https://archive.apache.org/dist/jmeter/binaries/
-ENV JMETER_INFLUX_PLUGIN_JAR_URL https://github.com/mderevyankoaqa/jmeter-influxdb2-listener-plugin/releases/download/v2.6/jmeter-plugins-influxdb2-listener-2.6.jar
+ENV JMETER_INFLUX_PLUGIN_JAR_URL https://github.com/mderevyankoaqa/jmeter-influxdb2-listener-plugin/releases/download/v2.8/jmeter-plugins-influxdb2-listener-2.8.jar
 
 # Set Jenkins Group
 ARG user=jenkins
@@ -30,9 +30,9 @@ RUN apt install -y openssh-server
 RUN sed -i 's|session    required     pam_loginuid.so|session    optional     pam_loginuid.so|g' /etc/pam.d/sshd
 RUN mkdir -p /var/run/sshd
 
-# Install Open JDK 17 (latest edition) and other tools
-RUN apt install -y openjdk-17-jdk && apt install -y curl unzip wget git
-ENV JAVA_HOME=/usr/lib/jvm/java-17-openjdk-amd64
+# Install Open JDK 21 (latest edition) and other tools
+RUN apt install -y openjdk-21-jdk && apt install -y curl unzip wget git
+ENV JAVA_HOME=/usr/lib/jvm/java-21-openjdk-amd64
 ENV PATH="$JAVA_HOME/bin:${PATH}:${JMETER_HOME}/bin"
 #Install Jmeter
 WORKDIR ${JMETER_HOME}
@@ -50,11 +50,11 @@ RUN wget https://repo1.maven.org/maven2/kg/apc/cmdrunner/${CMDRUNNER_JAR_VERSION
 WORKDIR ${JMETER_PLUGINS_FOLDER}
 RUN wget https://repo1.maven.org/maven2/kg/apc/jmeter-plugins-manager/${JMETER_PLUGINS_MANAGER_VERSION}/jmeter-plugins-manager-${JMETER_PLUGINS_MANAGER_VERSION}.jar
 WORKDIR ${JMETER_LIB_FOLDER}
-RUN curl -L --silent ${JMETER_INFLUX_PLUGIN_JAR_URL} -o ${JMETER_PLUGINS_FOLDER}/jmeter-plugins-influxdb2-listener-2.6.jar
+RUN curl -L --silent ${JMETER_INFLUX_PLUGIN_JAR_URL} -o ${JMETER_PLUGINS_FOLDER}/jmeter-plugins-influxdb2-listener-2.8.jar
 COPY groovy-all-2.4.16.jar ${JMETER_PLUGINS_FOLDER}/groovy-all-2.4.16.jar
 COPY mongo-java-driver-3.12.10.jar ${JMETER_PLUGINS_FOLDER}/mongo-java-driver-3.12.10.jar
 COPY postgresql-42.7.3.jar ${JMETER_PLUGINS_FOLDER}/postgresql-42.7.3.jar
-RUN java  -jar cmdrunner-2.2.1.jar --tool org.jmeterplugins.repository.PluginManagerCMD install-all-except jpgc-hadoop,jpgc-oauth,ulp-jmeter-autocorrelator-plugin,ulp-jmeter-videostreaming-plugin,ulp-jmeter-gwt-plugin,tilln-iso8583
+RUN java  -jar cmdrunner-${CMDRUNNER_JAR_VERSION}.jar --tool org.jmeterplugins.repository.PluginManagerCMD install-all-except jpgc-hadoop,jpgc-oauth,ulp-jmeter-autocorrelator-plugin,ulp-jmeter-videostreaming-plugin,ulp-jmeter-gwt-plugin,tilln-iso8583
 
 # Add user jenkins to the image
 RUN adduser --quiet jenkins
